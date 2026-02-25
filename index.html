@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TempMail Custom</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.container {
+    max-width: 500px;
+    margin: auto;
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+input, select {
+    padding: 8px;
+    border-radius: 8px;
+    border: none;
+    margin: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #2563eb;
+    color: white;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+.email-box {
+    background: #334155;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    word-break: break-all;
+}
+
+.message {
+    background: #475569;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: left;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>📧 TempMail Custom</h2>
+
+    <div>
+        <input type="text" id="alias" placeholder="Masukkan alias (contoh: fstore123)">
+        <select id="domainSelect"></select>
+    </div>
+
+    <button onclick="createEmail()">Buat Email</button>
+
+    <div class="email-box" id="emailBox">Belum ada email</div>
+
+    <button onclick="copyEmail()">Copy Email</button>
+    <button onclick="getMessages()">Cek Inbox</button>
+
+    <h3>📨 Inbox</h3>
+    <div id="inbox"></div>
+</div>
+
+<script>
+
+const APIKEY = "lapannoldua";
+let currentEmail = "";
+
+// Load domain saat pertama kali buka
+async function loadDomains() {
+    try {
+        const res = await fetch(`https://citayam.com/api/domains/${APIKEY}`);
+        const data = await res.json();
+
+        const select = document.getElementById("domainSelect");
+        select.innerHTML = "";
+
+        data.domains.forEach(domain => {
+            let option = document.createElement("option");
+            option.value = domain;
+            option.textContent = domain;
+            select.appendChild(option);
+        });
+
+    } catch (err) {
+        alert("Gagal mengambil domain");
+    }
+}
+
+function createEmail() {
+    const alias = document.getElementById("alias").value.trim();
+    const domain = document.getElementById("domainSelect").value;
+
+    if (!alias) {
+        alert("Masukkan alias dulu!");
+        return;
+    }
+
+    currentEmail = alias + "@" + domain;
+    document.getElementById("emailBox").innerText = currentEmail;
+    document.getElementById("inbox").innerHTML = "";
+}
+
+async function getMessages() {
+    if (!currentEmail) {
+        alert("Buat email dulu!");
+        return;
+    }
+
+    try {
+        const res = await fetch(`https://citayam.com/api/messages/${currentEmail}/${APIKEY}`);
+        const data = await res.json();
+
+        const inboxDiv = document.getElementById("inbox");
+        inboxDiv.innerHTML = "";
+
+        if (!data.messages || data.messages.length === 0) {
+            inboxDiv.innerHTML = "<p>Tidak ada pesan masuk</p>";
+            return;
+        }
+
+        data.messages.forEach(msg => {
+            inboxDiv.innerHTML += `
+                <div class="message">
+                    <strong>Dari:</strong> ${msg.from}<br>
+                    <strong>Subject:</strong> ${msg.subject}<br>
+                    <strong>Isi:</strong><br>${msg.body}
+                </div>
+            `;
+        });
+
+    } catch (err) {
+        alert("Gagal mengambil pesan");
+    }
+}
+
+function copyEmail() {
+    if (!currentEmail) {
+        alert("Belum ada email");
+        return;
+    }
+    navigator.clipboard.writeText(currentEmail);
+    alert("Email berhasil dicopy!");
+}
+
+loadDomains();
+
+</script>
+
+</body>
+</html>
